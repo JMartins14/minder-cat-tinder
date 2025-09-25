@@ -12,7 +12,6 @@ export const useCatBreeds = (page: number = 0, limit: number = 10) => {
       setLoading(true);
       setError(null);
       const response = await fetchCatBreeds(page, limit);
-      console.log('Fetched breeds:', response);
       setBreeds(response);
     } catch (e) {
       setError('Failed to fetch breeds');

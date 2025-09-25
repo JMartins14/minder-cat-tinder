@@ -1,4 +1,4 @@
-import React from 'react';
+import React, { useRef } from 'react';
 import {
   View,
   Text,
@@ -7,9 +7,11 @@ import {
   ActivityIndicator,
 } from 'react-native';
 import { useCatTinder } from '../hooks/useCatTinder';
-import SwipeCard from '../components/SwipeCard';
+import SwipeCard, { SwipeCardRef } from '../components/SwipeCard';
 
 const CatScreens = () => {
+  const swipeCardRef = useRef<SwipeCardRef>(null);
+
   const {
     currentBreed,
     currentImage,
@@ -89,6 +91,7 @@ const CatScreens = () => {
           {currentImage && currentBreed && (
             <View style={styles.currentCardWrapper}>
               <SwipeCard
+                ref={swipeCardRef}
                 key={currentImage.id}
                 cat={{
                   id: currentImage.id,
@@ -108,7 +111,7 @@ const CatScreens = () => {
       <View style={styles.actionButtons}>
         <TouchableOpacity
           style={[styles.dislikeButton, voteLoading && styles.disabled]}
-          onPress={handleDislike}
+          onPress={() => swipeCardRef.current?.swipeLeft()}
           disabled={voteLoading}
         >
           <Text style={styles.dislikeIcon}>✕</Text>
@@ -116,7 +119,7 @@ const CatScreens = () => {
 
         <TouchableOpacity
           style={[styles.likeButton, voteLoading && styles.disabled]}
-          onPress={handleLike}
+          onPress={() => swipeCardRef.current?.swipeRight()}
           disabled={voteLoading}
         >
           <Text style={styles.likeIcon}>♥</Text>
