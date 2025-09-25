@@ -1,4 +1,4 @@
-import React from 'react';
+import React, { useEffect } from 'react';
 import { View, Text, Image, StyleSheet, Dimensions } from 'react-native';
 import { GestureDetector } from 'react-native-gesture-handler';
 import Animated, {
@@ -7,12 +7,14 @@ import Animated, {
   runOnJS,
   withSpring,
   interpolate,
-  Extrapolate,
+  withTiming,
+  Extrapolation,
 } from 'react-native-reanimated';
 import { Gesture } from 'react-native-gesture-handler';
 import { Cat } from '../types';
 
 const { width, height } = Dimensions.get('window');
+const SWIPE_THRESHOLD = width * 0.25;
 
 interface SwipeCardProps {
   cat: Cat;
@@ -29,8 +31,13 @@ const SwipeCard: React.FC<SwipeCardProps> = ({
   const translateY = useSharedValue(0);
   const scale = useSharedValue(1);
 
+  useEffect(() => {
+    translateX.value = 0;
+    translateY.value = 0;
+    scale.value = 1;
+  }, [cat.id, translateX, translateY, scale]);
+
   const panGesture = Gesture.Pan()
-    .onBegin(() => {})
     .onUpdate(event => {
       translateX.value = event.translationX;
       translateY.value = event.translationY;
@@ -39,18 +46,18 @@ const SwipeCard: React.FC<SwipeCardProps> = ({
         Math.abs(translateX.value),
         [0, 100],
         [1, 0.95],
-        Extrapolate.CLAMP,
+        Extrapolation.CLAMP,
       );
     })
     .onEnd(() => {
-      const shouldSwipeRight = translateX.value > width * 0.25;
-      const shouldSwipeLeft = translateX.value < -width * 0.25;
+      const shouldSwipeRight = translateX.value > SWIPE_THRESHOLD;
+      const shouldSwipeLeft = translateX.value < -SWIPE_THRESHOLD;
 
       if (shouldSwipeRight) {
-        translateX.value = withSpring(width * 1.5);
+        translateX.value = withTiming(width * 1.5, { duration: 200 });
         runOnJS(onSwipeRight)();
       } else if (shouldSwipeLeft) {
-        translateX.value = withSpring(-width * 1.5);
+        translateX.value = withTiming(-width * 1.5, { duration: 200 });
         runOnJS(onSwipeLeft)();
       } else {
         translateX.value = withSpring(0);
@@ -60,48 +67,39 @@ const SwipeCard: React.FC<SwipeCardProps> = ({
     });
 
   const cardStyle = useAnimatedStyle(() => {
-    const rotation = interpolate(
+    const rotate = interpolate(
       translateX.value,
-      [-width * 0.5, 0, width * 0.5],
-      [-15, 0, 15],
-      Extrapolate.CLAMP,
+      [-width / 2, 0, width / 2],
+      [-30, 0, 30],
+      Extrapolation.CLAMP,
     );
-
     return {
       transform: [
         { translateX: translateX.value },
         { translateY: translateY.value },
-        { rotate: `${rotation}deg` },
+        { rotate: `${rotate}deg` },
         { scale: scale.value },
       ],
     };
   });
 
-  const likeOpacityStyle = useAnimatedStyle(() => {
-    const opacity = interpolate(
+  const nopeOpacityStyle = useAnimatedStyle(() => ({
+    opacity: interpolate(
       translateX.value,
-      [0, width * 0.25],
+      [0, SWIPE_THRESHOLD],
       [0, 1],
-      Extrapolate.CLAMP,
-    );
+      Extrapolation.CLAMP,
+    ),
+  }));
 
-    return {
-      opacity,
-    };
-  });
-
-  const nopeOpacityStyle = useAnimatedStyle(() => {
-    const opacity = interpolate(
+  const likeOpacityStyle = useAnimatedStyle(() => ({
+    opacity: interpolate(
       translateX.value,
-      [-width * 0.25, 0],
+      [-SWIPE_THRESHOLD, 0],
       [1, 0],
-      Extrapolate.CLAMP,
-    );
-
-    return {
-      opacity,
-    };
-  });
+      Extrapolation.CLAMP,
+    ),
+  }));
 
   return (
     <GestureDetector gesture={panGesture}>
@@ -141,7 +139,6 @@ const SwipeCard: React.FC<SwipeCardProps> = ({
 
 const styles = StyleSheet.create({
   container: {
-    position: 'absolute',
     width: width - 40,
     height: height * 0.6,
   },

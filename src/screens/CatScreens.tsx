@@ -13,6 +13,8 @@ const CatScreens = () => {
   const {
     currentBreed,
     currentImage,
+    nextBreed,
+    nextImage,
     breedsLoading,
     imagesLoading,
     voteLoading,
@@ -67,17 +69,40 @@ const CatScreens = () => {
   return (
     <View style={styles.container}>
       <View style={styles.cardContainer}>
-        <SwipeCard
-          cat={{
-            id: currentImage.id,
-            name: currentBreed.name,
-            imageUrl: currentImage.url,
-            temperament: currentBreed.temperament,
-            age: currentBreed.life_span,
-          }}
-          onSwipeLeft={handleDislike}
-          onSwipeRight={handleLike}
-        />
+        <View style={styles.cardsWrapper}>
+          {nextImage && nextBreed && (
+            <View style={styles.nextCardWrapper} pointerEvents="none">
+              <SwipeCard
+                key={nextImage.id}
+                cat={{
+                  id: nextImage.id,
+                  name: nextBreed.name,
+                  imageUrl: nextImage.url,
+                  temperament: nextBreed.temperament,
+                  age: nextBreed.life_span,
+                }}
+                onSwipeLeft={() => {}}
+                onSwipeRight={() => {}}
+              />
+            </View>
+          )}
+          {currentImage && currentBreed && (
+            <View style={styles.currentCardWrapper}>
+              <SwipeCard
+                key={currentImage.id}
+                cat={{
+                  id: currentImage.id,
+                  name: currentBreed.name,
+                  imageUrl: currentImage.url,
+                  temperament: currentBreed.temperament,
+                  age: currentBreed.life_span,
+                }}
+                onSwipeLeft={handleDislike}
+                onSwipeRight={handleLike}
+              />
+            </View>
+          )}
+        </View>
       </View>
 
       <View style={styles.actionButtons}>
@@ -112,6 +137,19 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     justifyContent: 'center',
     paddingHorizontal: 20,
+  },
+  cardsWrapper: {
+    position: 'relative',
+    width: '100%',
+    alignItems: 'center',
+  },
+  nextCardWrapper: {
+    zIndex: 1,
+  },
+  currentCardWrapper: {
+    position: 'absolute',
+    top: 0,
+    zIndex: 2,
   },
   actionButtons: {
     flexDirection: 'row',
