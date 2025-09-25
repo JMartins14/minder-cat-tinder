@@ -3,14 +3,11 @@ import {
   View,
   Text,
   StyleSheet,
-  Image,
   TouchableOpacity,
-  Dimensions,
   ActivityIndicator,
 } from 'react-native';
 import { useCatTinder } from '../hooks/useCatTinder';
-
-const { width, height } = Dimensions.get('window');
+import SwipeCard from '../components/SwipeCard';
 
 const CatScreens = () => {
   const {
@@ -70,24 +67,17 @@ const CatScreens = () => {
   return (
     <View style={styles.container}>
       <View style={styles.cardContainer}>
-        <View style={styles.card}>
-          <Image
-            source={{ uri: currentImage.url }}
-            style={styles.catImage}
-            resizeMode="cover"
-          />
-
-          <View style={styles.catInfo}>
-            <View style={styles.catDetails}>
-              <Text style={styles.breedName}>{currentBreed.name}</Text>
-              <Text style={styles.catDescription}>
-                {currentBreed.temperament?.split(',').slice(0, 3).join(' • ') ||
-                  'Friendly • Loving'}
-              </Text>
-            </View>
-            <Text style={styles.ageText}>{currentBreed?.life_span}</Text>
-          </View>
-        </View>
+        <SwipeCard
+          cat={{
+            id: currentImage.id,
+            name: currentBreed.name,
+            imageUrl: currentImage.url,
+            temperament: currentBreed.temperament,
+            age: currentBreed.life_span,
+          }}
+          onSwipeLeft={handleDislike}
+          onSwipeRight={handleLike}
+        />
       </View>
 
       <View style={styles.actionButtons}>
@@ -122,60 +112,6 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     justifyContent: 'center',
     paddingHorizontal: 20,
-  },
-  card: {
-    width: width - 40,
-    height: height * 0.6,
-    borderRadius: 20,
-    backgroundColor: '#fff',
-    shadowColor: '#000',
-    shadowOffset: {
-      width: 0,
-      height: 4,
-    },
-    shadowOpacity: 0.3,
-    shadowRadius: 8,
-    elevation: 8,
-    overflow: 'hidden',
-  },
-  catImage: {
-    width: '100%',
-    height: '100%',
-  },
-  catInfo: {
-    position: 'absolute',
-    bottom: 20,
-    left: 20,
-    right: 20,
-    backgroundColor: 'rgba(255, 255, 255, 0.9)',
-    borderRadius: 15,
-    padding: 15,
-    flexDirection: 'row',
-    justifyContent: 'space-between',
-    alignItems: 'center',
-  },
-  catDetails: {
-    flex: 1,
-  },
-  breedName: {
-    fontSize: 24,
-    fontWeight: 'bold',
-    color: '#333',
-    marginBottom: 4,
-  },
-  catDescription: {
-    fontSize: 16,
-    color: '#666',
-    marginBottom: 4,
-  },
-  locationText: {
-    fontSize: 14,
-    color: '#999',
-  },
-  ageText: {
-    fontSize: 20,
-    color: '#666',
-    fontWeight: '500',
   },
   actionButtons: {
     flexDirection: 'row',

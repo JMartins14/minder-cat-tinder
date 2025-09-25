@@ -1,12 +1,231 @@
-import { View, Text } from 'react-native';
 import React from 'react';
+import { View, Text, Image, StyleSheet, Dimensions } from 'react-native';
+import { GestureDetector } from 'react-native-gesture-handler';
+import Animated, {
+  useSharedValue,
+  useAnimatedStyle,
+  runOnJS,
+  withSpring,
+  interpolate,
+  Extrapolate,
+} from 'react-native-reanimated';
+import { Gesture } from 'react-native-gesture-handler';
+import { Cat } from '../types';
 
-const SwipeCard = () => {
+const { width, height } = Dimensions.get('window');
+
+interface SwipeCardProps {
+  cat: Cat;
+  onSwipeLeft: () => void;
+  onSwipeRight: () => void;
+}
+
+const SwipeCard: React.FC<SwipeCardProps> = ({
+  cat,
+  onSwipeLeft,
+  onSwipeRight,
+}) => {
+  const translateX = useSharedValue(0);
+  const translateY = useSharedValue(0);
+  const scale = useSharedValue(1);
+
+  const panGesture = Gesture.Pan()
+    .onBegin(() => {})
+    .onUpdate(event => {
+      translateX.value = event.translationX;
+      translateY.value = event.translationY;
+
+      scale.value = interpolate(
+        Math.abs(translateX.value),
+        [0, 100],
+        [1, 0.95],
+        Extrapolate.CLAMP,
+      );
+    })
+    .onEnd(() => {
+      const shouldSwipeRight = translateX.value > width * 0.25;
+      const shouldSwipeLeft = translateX.value < -width * 0.25;
+
+      if (shouldSwipeRight) {
+        translateX.value = withSpring(width * 1.5);
+        runOnJS(onSwipeRight)();
+      } else if (shouldSwipeLeft) {
+        translateX.value = withSpring(-width * 1.5);
+        runOnJS(onSwipeLeft)();
+      } else {
+        translateX.value = withSpring(0);
+        translateY.value = withSpring(0);
+        scale.value = withSpring(1);
+      }
+    });
+
+  const cardStyle = useAnimatedStyle(() => {
+    const rotation = interpolate(
+      translateX.value,
+      [-width * 0.5, 0, width * 0.5],
+      [-15, 0, 15],
+      Extrapolate.CLAMP,
+    );
+
+    return {
+      transform: [
+        { translateX: translateX.value },
+        { translateY: translateY.value },
+        { rotate: `${rotation}deg` },
+        { scale: scale.value },
+      ],
+    };
+  });
+
+  const likeOpacityStyle = useAnimatedStyle(() => {
+    const opacity = interpolate(
+      translateX.value,
+      [0, width * 0.25],
+      [0, 1],
+      Extrapolate.CLAMP,
+    );
+
+    return {
+      opacity,
+    };
+  });
+
+  const nopeOpacityStyle = useAnimatedStyle(() => {
+    const opacity = interpolate(
+      translateX.value,
+      [-width * 0.25, 0],
+      [1, 0],
+      Extrapolate.CLAMP,
+    );
+
+    return {
+      opacity,
+    };
+  });
+
   return (
-    <View>
-      <Text>SwipeCard</Text>
-    </View>
+    <GestureDetector gesture={panGesture}>
+      <Animated.View style={[styles.container, cardStyle]}>
+        <View style={styles.card}>
+          <Image
+            source={{
+              uri: cat.imageUrl,
+            }}
+            style={styles.catImage}
+            resizeMode="cover"
+          />
+
+          <Animated.View style={[styles.likeLabel, likeOpacityStyle]}>
+            <Text style={styles.likeLabelText}>LIKE</Text>
+          </Animated.View>
+
+          <Animated.View style={[styles.nopeLabel, nopeOpacityStyle]}>
+            <Text style={styles.nopeLabelText}>NOPE</Text>
+          </Animated.View>
+
+          <View style={styles.catInfo}>
+            <View style={styles.catDetails}>
+              <Text style={styles.breedName}>{cat.name}</Text>
+              <Text style={styles.catDescription}>
+                {cat.temperament?.split(',').slice(0, 3).join(' • ') ||
+                  'Friendly • Loving'}
+              </Text>
+            </View>
+            <Text style={styles.ageText}>{cat.age || '2-4'}</Text>
+          </View>
+        </View>
+      </Animated.View>
+    </GestureDetector>
   );
 };
+
+const styles = StyleSheet.create({
+  container: {
+    position: 'absolute',
+    width: width - 40,
+    height: height * 0.6,
+  },
+  card: {
+    flex: 1,
+    borderRadius: 20,
+    backgroundColor: '#fff',
+    shadowColor: '#000',
+    shadowOffset: {
+      width: 0,
+      height: 4,
+    },
+    shadowOpacity: 0.3,
+    shadowRadius: 8,
+    elevation: 8,
+    overflow: 'hidden',
+  },
+  catImage: {
+    width: '100%',
+    height: '100%',
+  },
+  likeLabel: {
+    position: 'absolute',
+    top: 50,
+    right: 20,
+    backgroundColor: 'rgba(76, 217, 100, 0.9)',
+    paddingHorizontal: 35,
+    paddingVertical: 15,
+    borderRadius: 12,
+    transform: [{ rotate: '15deg' }],
+  },
+  likeLabelText: {
+    color: 'white',
+    fontSize: 28,
+    fontWeight: 'bold',
+    letterSpacing: 2,
+  },
+  nopeLabel: {
+    position: 'absolute',
+    top: 50,
+    left: 20,
+    backgroundColor: 'rgba(255, 59, 48, 0.9)',
+    paddingHorizontal: 35,
+    paddingVertical: 15,
+    borderRadius: 12,
+    transform: [{ rotate: '-15deg' }],
+  },
+  nopeLabelText: {
+    color: 'white',
+    fontSize: 28,
+    fontWeight: 'bold',
+    letterSpacing: 2,
+  },
+  catInfo: {
+    position: 'absolute',
+    bottom: 20,
+    left: 20,
+    right: 20,
+    backgroundColor: 'rgba(255, 255, 255, 0.9)',
+    borderRadius: 15,
+    padding: 15,
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'center',
+  },
+  catDetails: {
+    flex: 1,
+  },
+  breedName: {
+    fontSize: 24,
+    fontWeight: 'bold',
+    color: '#333',
+    marginBottom: 4,
+  },
+  catDescription: {
+    fontSize: 16,
+    color: '#666',
+    marginBottom: 4,
+  },
+  ageText: {
+    fontSize: 20,
+    color: '#666',
+    fontWeight: '500',
+  },
+});
 
 export default SwipeCard;

@@ -62,3 +62,11 @@ export interface VoteResponse {
   value: number;
   created_at: string;
 }
+
+export interface Cat {
+  id: string;
+  name: string;
+  imageUrl: string;
+  temperament: string;
+  age: string;
+}
